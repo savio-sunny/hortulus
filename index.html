@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Arborist - Realistic Heavens</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+    <style>
+        :root {
+            --sky-day-top: #0ea5e9;
+            --sky-day-bottom: #bae6fd;
+            --sky-night-top: #020617;
+            --sky-night-bottom: #1e1b4b;
+            --transition-speed: 3s;
+            --btn-blue: #0ea5e9;
+            
+            /* Preloader Colors */
+            --color-1: #666EE8;
+            --color-2: #7766EC;
+            --color-3: #885EF0;
+            --color-4: #9857F4;
+            --color-5: #A855F7;
+            --loader-bg: #000000;
+            --loader-text: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            image-rendering: pixelated;
+        }
+
+        body {
+            background-color: #000;
+            overflow: hidden;
+            height: 100vh;
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+        }
+
+        /* ============================= */
+        /* PRELOADER STYLES (REAL)       */
+        /* ============================= */
+        
+        #loader-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--loader-bg);
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.8s ease-in-out; /* Slightly faster exit for 'real' feel */
+        }
+
+        .loader-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 32px;
+        }
+
+        .v3 { 
+            display: flex; 
+            gap: 8px; 
+        }
+        
+        .v3 div { 
+            width: 8px; 
+            height: 8px; 
+            border-radius: 50%; 
+            animation: v3a 1.2s infinite ease-in-out; 
+        }
+
+        .v3 div:nth-child(1) { background: var(--color-1); animation-delay: 0s; }
+        .v3 div:nth-child(2) { background: var(--color-2); animation-delay: 0.1s; }
+        .v3 div:nth-child(3) { background: var(--color-3); animation-delay: 0.2s; }
+        .v3 div:nth-child(4) { background: var(--color-4); animation-delay: 0.3s; }
+        .v3 div:nth-child(5) { background: var(--color-5); animation-delay: 0.4s; }
+
+        @keyframes v3a { 
+            0%, 100% { transform: translateY(0); } 
+            50% { transform: translateY(-20px); } 
+        }
+
+        .loader-text {
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.3em;
+            color: var(--loader-text);
+            text-transform: uppercase;
+            opacity: 0.9;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        /* ============================= */
+        /* GAME UI STYLES              */
+        /* ============================= */
+
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            transition: all var(--transition-speed) cubic-bezier(0.4, 0, 0.2, 1);
+            background: linear-gradient(to bottom, var(--sky-day-top), var(--sky-day-bottom));
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .hero-overlay {
+            position: absolute;
+            top: 8%;
+            left: 5%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: clamp(2rem, 10vw, 5rem);
+            font-weight: 900;
+            letter-spacing: -3px;
+            color: #ffffff;
+            text-transform: uppercase;
+            mix-blend-mode: overlay;
+            line-height: 0.9;
+        }
+
+        .tagline {
+            font-size: 11px;
+            letter-spacing: 6px;
+            color: #ffffff;
+            opacity: 0.8;
+            text-transform: uppercase;
+            margin-top: 10px;
+        }
+
+        .controls-container {
+            position: absolute;
+            bottom: 40px;
+            right: 40px;
+            z-index: 100;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .circle-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: transparent;
+            border: 4px solid #fff;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s;
+        }
+
+        .circle-btn:hover {
+            transform: scale(1.1) rotate(5deg);
+            box-shadow: 0 6px 14px rgba(0,0,0,0.4);
+        }
+
+        .circle-btn:active {
+            transform: scale(0.95);
+        }
+
+        .copyright-overlay {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 10px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            z-index: 5;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loader-overlay">
+        <div class="loader-container">
+            <div class="v3">
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+            <div class="loader-text">HORIZON LABS</div>
+        </div>
+    </div>
+
+    <div id="game-container">
+        <div class="hero-overlay">
+            <h1>HORTULUS</h1>
+            <div class="tagline">A VIRTUAL BOTANIC GARDEN</div>
+            <div class="tagline">- DEVELOPER: SAVIO SUNNY -</div>
+        </div>
+
+        <div class="copyright-overlay">
+            &copy; Copyright - HORIZON LABS - All Rights Reserved
+        </div>
+
+        <div class="controls-container">
+            <div id="btn-atmosphere" class="circle-btn" title="Toggle Atmosphere">
+                <i class="bi bi-cloud-sun-fill"></i>
+            </div>
+        </div>
+
+        <canvas id="main-canvas"></canvas>
+    </div>
+
+    <script>
+        class SeededRandom {
+            constructor(seed = 777) {
+                this.initialSeed = seed;
+                this.seed = seed;
+            }
+            reset() { this.seed = this.initialSeed; }
+            next() {
+                this.seed = (this.seed * 1664525 + 1013904223) % 4294967296;
+                return this.seed / 4294967296;
+            }
+            range(min, max) { return min + this.next() * (max - min); }
+            choice(array) { return array[Math.floor(this.next() * array.length)]; }
+        }
+
+        class SkySystem {
+            constructor(width, height, rng) {
+                this.width = width;
+                this.height = height;
+                this.rng = rng;
+                this.stars = [];
+                this.comets = [];
+                this.birds = [];
+                this.init();
+            }
+
+            init() {
+                this.rng.reset();
+                for(let i=0; i<300; i++) {
+                    this.stars.push({
+                        x: this.rng.range(0, 4000), 
+                        y: this.rng.range(0, 1500),
+                        size: this.rng.range(0.5, 2.0),
+                        twinkle: this.rng.range(0, Math.PI * 2)
+                    });
+                }
+                const birdColors = ['#f87171', '#fbbf24', '#34d399', '#60a5fa', '#c084fc', '#ffffff'];
+                for(let i=0; i<12; i++) {
+                    this.birds.push({
+                        x: this.rng.range(0, this.width),
+                        y: this.rng.range(50, this.height * 0.4),
+                        speed: this.rng.range(1.5, 3.5),
+                        color: this.rng.choice(birdColors),
+                        wingPhase: this.rng.range(0, Math.PI * 2),
+                        wingSpeed: this.rng.range(0.1, 0.2)
+                    });
+                }
+            }
+
+            spawnComet() {
+                const speedMult = Math.random() * 2 + 3;
+                this.comets.push({
+                    x: Math.random() * this.width * 0.5 - 200,
+                    y: -100,
+                    vx: speedMult,
+                    vy: speedMult * 0.7,
+                    life: 1.0,
+                    size: Math.random() * 1.5 + 1
+                });
+            }
+
+            update(isNight) {
+                for (let i = this.comets.length - 1; i >= 0; i--) {
+                    let c = this.comets[i];
+                    c.x += c.vx;
+                    c.y += c.vy;
+                    c.life -= 0.003;
+                    if (c.life <= 0 || c.x > this.width + 200 || c.y > this.height) {
+                        this.comets.splice(i, 1);
+                    }
+                }
+                if (isNight && Math.random() < 0.01) this.spawnComet();
+
+                this.birds.forEach(b => {
+                    b.x += b.speed;
+                    b.wingPhase += b.wingSpeed;
+                    if (b.x > this.width + 50) {
+                        b.x = -50;
+                        b.y = Math.random() * (this.height * 0.4) + 50;
+                    }
+                });
+            }
+
+            draw(ctx, isNight, groundY) {
+                const grad = ctx.createLinearGradient(0, 0, 0, groundY);
+                if (!isNight) {
+                    grad.addColorStop(0, '#0ea5e9'); grad.addColorStop(1, '#bae6fd');
+                } else {
+                    grad.addColorStop(0, '#020617'); grad.addColorStop(1, '#1e1b4b');
+                }
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, this.width, groundY);
+
+                if (isNight) {
+                    this.stars.forEach(s => {
+                        const alpha = 0.2 + Math.abs(Math.sin(Date.now() * 0.001 + s.twinkle)) * 0.8;
+                        ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+                        ctx.fillRect(s.x % this.width, s.y, s.size, s.size);
+                    });
+
+                    this.comets.forEach(c => {
+                        ctx.save();
+                        const trailGrad = ctx.createLinearGradient(c.x, c.y, c.x - (c.vx * 15), c.y - (c.vy * 15));
+                        trailGrad.addColorStop(0, `rgba(255, 255, 255, ${c.life})`);
+                        trailGrad.addColorStop(1, `rgba(255, 255, 255, 0)`);
+                        ctx.strokeStyle = trailGrad;
+                        ctx.lineWidth = c.size;
+                        ctx.beginPath();
+                        ctx.moveTo(c.x, c.y);
+                        ctx.lineTo(c.x - (c.vx * 15), c.y - (c.vy * 15));
+                        ctx.stroke();
+                        ctx.fillStyle = `rgba(255, 255, 255, ${c.life})`;
+                        ctx.fillRect(c.x - c.size/2, c.y - c.size/2, c.size, c.size);
+                        ctx.restore();
+                    });
+
+                    this.drawCelestialBody(ctx, isNight);
+
+                } else {
+                    this.drawCelestialBody(ctx, isNight);
+
+                    this.birds.forEach(b => {
+                        ctx.save();
+                        ctx.strokeStyle = b.color;
+                        ctx.lineWidth = 2;
+                        const wingY = Math.sin(b.wingPhase) * 5;
+                        ctx.beginPath();
+                        ctx.moveTo(b.x - 6, b.y - wingY);
+                        ctx.lineTo(b.x, b.y);
+                        ctx.lineTo(b.x + 6, b.y - wingY);
+                        ctx.stroke();
+                        ctx.restore();
+                    });
+                }
+            }
+
+            drawCelestialBody(ctx, isNight) {
+                const x = this.width * 0.8, y = this.height * 0.2;
+                if (!isNight) {
+                    const time = Date.now() * 0.002;
+                    const pulse = Math.sin(time) * 5;
+                    const outerGlow = ctx.createRadialGradient(x, y, 30, x, y, 120 + pulse);
+                    outerGlow.addColorStop(0, 'rgba(253, 224, 71, 0.4)');
+                    outerGlow.addColorStop(1, 'rgba(253, 224, 71, 0)');
+                    ctx.fillStyle = outerGlow;
+                    ctx.beginPath(); ctx.arc(x, y, 120 + pulse, 0, Math.PI*2); ctx.fill();
+                    const midGlow = ctx.createRadialGradient(x, y, 20, x, y, 60 + pulse * 0.5);
+                    midGlow.addColorStop(0, 'rgba(254, 240, 138, 0.6)');
+                    midGlow.addColorStop(1, 'rgba(254, 240, 138, 0)');
+                    ctx.fillStyle = midGlow;
+                    ctx.beginPath(); ctx.arc(x, y, 60 + pulse * 0.5, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = '#fef08a';
+                    ctx.beginPath(); ctx.arc(x, y, 38, 0, Math.PI*2); ctx.fill();
+                } else {
+                    ctx.fillStyle = '#f8fafc';
+                    ctx.shadowBlur = 30; ctx.shadowColor = 'white';
+                    ctx.beginPath(); ctx.arc(x, y, 38, 0, Math.PI*2); ctx.fill();
+                    ctx.shadowBlur = 0;
+                }
+            }
+        }
+
+        class Flower {
+            constructor(x, y, scale, color, seed) {
+                this.x = x; this.y = y; this.z = y;
+                this.scale = scale; this.color = color; this.seed = seed;
+                this.stemHeight = scale * 2.5;
+            }
+            draw(ctx, isNight) {
+                const time = Date.now();
+                const swayOffset = Math.sin(time * 0.002 + this.seed) * (this.scale * 1.2);
+                const glowPulse = (0.5 + Math.abs(Math.sin(time * 0.0015 + this.seed)) * 0.5);
+                ctx.save();
+                ctx.strokeStyle = isNight ? '#064e3b' : '#10b981';
+                ctx.lineWidth = this.scale / 4;
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y);
+                ctx.quadraticCurveTo(this.x, this.y - this.stemHeight/2, this.x + swayOffset, this.y - this.stemHeight);
+                ctx.stroke();
+                ctx.translate(this.x + swayOffset, this.y - this.stemHeight);
+                if (isNight) {
+                    ctx.shadowBlur = 12 * glowPulse;
+                    ctx.shadowColor = this.color;
+                    ctx.globalAlpha = 0.8 * glowPulse;
+                }
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(0, 0, this.scale/2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        const TREE_GRID = [
+            [0,0,0,0,0,1,1,1,1,1,0,0,0,0,0],
+            [0,0,1,1,1,1,2,2,2,1,1,1,1,0,0],
+            [0,1,1,2,2,2,3,3,3,2,2,2,1,1,0],
+            [1,1,2,2,3,3,3,3,3,3,3,2,2,1,1],
+            [1,2,3,3,3,4,4,4,4,4,3,3,3,2,1],
+            [1,2,3,4,4,4,4,4,4,4,4,4,3,2,1],
+            [0,1,2,3,4,4,4,4,4,4,4,3,2,1,0],
+            [0,0,1,2,3,3,3,3,3,3,3,2,1,0,0],
+            [0,0,0,0,5,5,5,6,6,6,0,0,0,0,0],
+            [0,0,0,0,5,5,5,6,6,6,0,0,0,0,0],
+            [0,0,0,5,5,5,5,6,6,6,6,0,0,0,0],
+            [0,0,0,5,5,5,5,6,6,6,6,0,0,0,0]
+        ];
+
+        class Tree {
+            constructor(x, y, scale, seed) {
+                this.x = x; this.y = y; this.z = y;
+                this.scale = scale; this.seed = seed;
+            }
+            draw(ctx, isNight) {
+                const colors = isNight ? 
+                    {l1:'#0f172a', l2:'#1e293b', l3:'#334155', l4:'#1e1b4b', t1:'#020617', t2:'#000'} :
+                    {l1:'#4ade80', l2:'#22c55e', l3:'#166534', l4:'#064e3b', t1:'#78350f', t2:'#451a03'};
+                const sway = Math.sin(Date.now() * 0.001 + this.seed) * (this.scale * 0.5);
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                TREE_GRID.forEach((row, yIdx) => {
+                    row.forEach((p, xIdx) => {
+                        if(p === 0) return;
+                        ctx.fillStyle = p===1?colors.l1:p===2?colors.l2:p===3?colors.l3:p===4?colors.l4:p===5?colors.t1:colors.t2;
+                        const xOff = (p < 5) ? sway * (1 - yIdx/TREE_GRID.length) : 0;
+                        ctx.fillRect((xIdx - row.length/2)*this.scale + xOff, (yIdx - TREE_GRID.length)*this.scale, this.scale, this.scale);
+                    });
+                });
+                ctx.restore();
+            }
+        }
+
+        class World {
+            constructor(rng, w, h) {
+                this.rng = rng; this.width = w; this.height = h;
+                this.sky = new SkySystem(w, h, rng);
+                this.groundY = h * 0.75;
+                this.entities = [];
+            }
+            generate() {
+                this.entities = [];
+                this.rng.reset();
+                const treeScale = 18;
+                this.entities.push(new Tree(this.width * 0.2, this.groundY, treeScale, 999));
+                const colorBands = ['#ff4d6d', '#ff758f', '#ffc300', '#9d4edd', '#4895ef', '#ffffff'];
+                const bandHeight = (this.height - this.groundY) / colorBands.length;
+                colorBands.forEach((color, index) => {
+                    const bandStartY = this.groundY + (index * bandHeight);
+                    const bandEndY = bandStartY + bandHeight;
+                    const bandFlowers = [];
+                    let attempts = 0;
+                    const maxBandFlowers = Math.floor(this.width / 12); 
+                    while (bandFlowers.length < maxBandFlowers && attempts < 2000) {
+                        const x = this.rng.range(10, this.width - 10);
+                        const y = this.rng.range(bandStartY + 5, bandEndY - 5);
+                        const scale = this.rng.range(3, 5);
+                        let overlapping = false;
+                        for (let other of bandFlowers) {
+                            const dx = x - other.x;
+                            const dy = y - other.y;
+                            const dist = Math.sqrt(dx*dx + dy*dy);
+                            if (dist < (scale + other.scale) * 1.2) { 
+                                overlapping = true;
+                                break;
+                            }
+                        }
+                        if (!overlapping) {
+                            const f = new Flower(x, y, scale, color, this.rng.next() * 100);
+                            this.entities.push(f);
+                            bandFlowers.push(f);
+                        }
+                        attempts++;
+                    }
+                });
+            }
+            update(isNight) { this.sky.update(isNight); }
+            draw(renderer, isNight) {
+                const ctx = renderer.ctx;
+                this.sky.draw(ctx, isNight, this.groundY);
+                ctx.fillStyle = isNight ? '#022c22' : '#14532d';
+                ctx.fillRect(0, this.groundY, this.width, this.height - this.groundY);
+                this.entities.sort((a,b) => a.z - b.z);
+                this.entities.forEach(e => e.draw(ctx, isNight));
+            }
+        }
+
+        class Engine {
+            constructor(onReady) {
+                this.canvas = document.getElementById('main-canvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.rng = new SeededRandom(888); 
+                this.world = new World(this.rng, window.innerWidth, window.innerHeight);
+                this.isNight = false;
+
+                window.addEventListener('resize', () => {
+                    this.canvas.width = window.innerWidth; this.canvas.height = window.innerHeight;
+                    this.world.width = window.innerWidth; this.world.height = window.innerHeight;
+                    this.world.groundY = window.innerHeight * 0.75;
+                    this.world.sky.width = window.innerWidth;
+                    this.world.sky.height = window.innerHeight;
+                    this.world.generate();
+                });
+
+                const atmosphereBtn = document.getElementById('btn-atmosphere');
+                atmosphereBtn.addEventListener('click', () => {
+                    this.isNight = !this.isNight;
+                    const icon = atmosphereBtn.querySelector('i');
+                    if (this.isNight) {
+                        icon.className = 'bi bi-moon-stars-fill';
+                    } else {
+                        icon.className = 'bi bi-cloud-sun-fill';
+                    }
+                });
+
+                this.canvas.width = window.innerWidth; this.canvas.height = window.innerHeight;
+                
+                // Real Work: Generate and then signal readiness
+                this.world.generate();
+                
+                if (onReady) onReady();
+                
+                this.loop();
+            }
+            loop() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                this.world.update(this.isNight);
+                this.world.draw(this, this.isNight);
+                requestAnimationFrame(() => this.loop());
+            }
+        }
+        
+        // ==========================================
+        // REAL PRELOADER LOGIC
+        // ==========================================
+        window.addEventListener('load', () => {
+            // We start the engine. When the engine's setup logic is finished (world.generate etc), 
+            // it calls our callback.
+            new Engine(() => {
+                const loader = document.getElementById('loader-overlay');
+                
+                // Optional: We still use a tiny 500ms delay to prevent the screen 
+                // from flickering if the load is "too fast", giving the user 
+                // a moment to register the brand.
+                setTimeout(() => {
+                    loader.style.opacity = '0';
+                    setTimeout(() => {
+                        loader.style.display = 'none';
+                    }, 800); // Wait for the 0.8s CSS transition to finish
+                }, 800);
+            });
+        });
+    </script>
+</body>
+</html>
